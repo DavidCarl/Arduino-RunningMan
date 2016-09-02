@@ -150,6 +150,9 @@ void loading(){
   }
   delay(1000);
   lcd.clear();
+  tone(6,900,100);
+  delay(150);
+  tone(6,1000,100);
 }
 
 
