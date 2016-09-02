@@ -108,6 +108,7 @@ lcd.begin(16, 2);
 pinMode(left, INPUT_PULLUP);
 pinMode(jumpBtn, INPUT_PULLUP);
 pinMode(right, INPUT_PULLUP);
+pinMode(6, OUTPUT);
 //lcd.createChar(0, manJumpRight);
 //lcd.createChar(1, manJumpLeft);
 lcd.createChar(0, manRunRightOne);
@@ -118,7 +119,39 @@ lcd.createChar(4, manStand);
 lcd.createChar(5, manJumpLeft);
 lcd.createChar(6, manJumpOnPlace);
 lcd.createChar(7, manJumpRight);
+title();
+loading();
 }
+
+void title() {
+  lcd.setCursor(3,0);
+  lcd.print("Runner Man");
+  lcd.setCursor(6,1);
+  lcd.print("RUN!");
+  int tones[4]={800,600,800,1200};
+  int tonesCount = sizeof(tones)/2;
+  Serial.print(tonesCount);
+  for (int i=0;i<tonesCount;i++){
+    tone(6,tones[i],150);
+    delay(250);
+  }
+  delay(3000);
+  lcd.clear();
+}
+
+void loading(){
+  lcd.setCursor(0,0);
+  tone(6,500,50);
+  lcd.write("Loading");
+  for (int i=0;i<3;i++){
+    delay(1000);
+    tone(6,500,50);
+    lcd.write("."); 
+  }
+  delay(1000);
+  lcd.clear();
+}
+
 
 void loop() {
   int leftValue = digitalRead(left);
@@ -163,6 +196,7 @@ void adjustCurrentLayer(){
 }
 void run(int pile,int add) {
   printFrame(aRec.pile%2+add);
+  tone(6,150,100);
   delay(150);
   eraseCurrentFrame();
   aRec.pile += pile;
@@ -173,7 +207,10 @@ void jump(int pile) {
   aRec.pile += pile;
   aRec.layer = 0;
   printFrame(6+pile);
-  delay(250);
+  tone(6,250,125);
+  delay(125);
+  tone(6,500,125);
+  delay(125);
   eraseCurrentFrame();
   adjustCurrentPosition();
   fall(pile);
