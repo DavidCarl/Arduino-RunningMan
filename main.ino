@@ -93,8 +93,16 @@ struct position{
   int pile = 0;
 };
 typedef struct position Position;
-
 Position aRec;
+
+struct coin{
+  position coordinates;
+  bool active;
+};
+int coinsCount = 5;
+struct coin coins[5];
+int score = 0;
+int missed = 0;
 
 int left = 8;
 int jumpBtn = 9;
@@ -121,6 +129,7 @@ lcd.createChar(6, manJumpOnPlace);
 lcd.createChar(7, manJumpRight);
 title();
 loading();
+rewriteCoins();
 }
 
 void title() {
@@ -130,7 +139,6 @@ void title() {
   lcd.print("RUN!");
   int tones[4]={800,600,800,1200};
   int tonesCount = sizeof(tones)/2;
-  Serial.print(tonesCount);
   for (int i=0;i<tonesCount;i++){
     tone(6,tones[i],150);
     delay(250);
@@ -155,6 +163,43 @@ void loading(){
   tone(6,1000,100);
 }
 
+bool checkColision() {
+  for(int i=0;i<coinsCount;i++){
+    if(sameCoordinates(aRec,coins[i].coordinates)){
+      coins[i].active = false;
+      score++;
+      return true;
+    }  
+  }
+  return false;
+}
+bool sameCoordinates(position one,position two) {
+  return one.layer == two.layer && one.pile == two.pile;
+}
+void rewriteCoins() {
+  lcd.clear();
+  for(int i=0;i<coinsCount;i++){
+    if(coins[i].active == true){
+      missed++;
+    }
+    
+    position coordinates;
+    coordinates.pile = getRandInLimit(16);
+    coordinates.layer = getRandInLimit(2);
+    coins[i].active = true;          
+    coins[i].coordinates = coordinates;
+
+    lcd.setCursor(coordinates.pile,coordinates.layer);
+    lcd.write("*");
+  }
+  Serial.print("score ");
+  Serial.println(score);
+  Serial.print("missed ");
+  Serial.println(missed);  
+}
+int getRandInLimit(int limit){
+  return rand() % limit;
+}
 
 void loop() {
   int leftValue = digitalRead(left);
@@ -194,19 +239,20 @@ void adjustCurrentLayer(){
   if(aRec.layer == 0){
     aRec.layer = 1;
     delay(150);
-    eraseCurrentFrame();  
+    eraseCurrentFrame(aRec);  
   }
+  lcd.clear();
 }
 void run(int pile,int add) {
   printFrame(aRec.pile%2+add);
   tone(6,150,100);
   delay(150);
-  eraseCurrentFrame();
+  eraseCurrentFrame(aRec);
   aRec.pile += pile;
   adjustCurrentPosition();
 }
 void jump(int pile) {
-  eraseCurrentFrame();
+  eraseCurrentFrame(aRec);
   aRec.pile += pile;
   aRec.layer = 0;
   printFrame(6+pile);
@@ -214,7 +260,7 @@ void jump(int pile) {
   delay(125);
   tone(6,500,125);
   delay(125);
-  eraseCurrentFrame();
+  eraseCurrentFrame(aRec);
   adjustCurrentPosition();
   fall(pile);
 }
@@ -223,21 +269,26 @@ void fall(int pile){
   aRec.layer = 1;
   printFrame(4);
   delay(150);
-  eraseCurrentFrame();
+  eraseCurrentFrame(aRec);
   adjustCurrentPosition();      
 }
 void printFrame(int animation){
   lcd.setCursor(aRec.pile,aRec.layer);
   lcd.write(byte(animation));
+  if(checkColision()){
+    tone(6,1000,100);
+  }
 }
-void eraseCurrentFrame(){
-  lcd.setCursor(aRec.pile,aRec.layer);
+void eraseCurrentFrame(position place){
+  lcd.setCursor(place.pile,place.layer);
   lcd.write(' ');  
 }
 void adjustCurrentPosition(){
   if(aRec.pile>15){
     aRec.pile = 0;
+    rewriteCoins();
   }else if(aRec.pile<0){
     aRec.pile = 15;
+    rewriteCoins();
   }  
 }
